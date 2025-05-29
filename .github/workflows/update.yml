@@ -1,0 +1,37 @@
+name: 自动更新M3U
+
+on:
+  schedule:
+    - cron: '0 1 * * *'  # 每天凌晨1点（UTC时间）执行一次
+  workflow_dispatch:      # 允许手动运行
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出仓库代码
+        uses: actions/checkout@v3
+
+      - name: 创建临时目录
+        run: mkdir -p output
+
+      - name: 下载 IPTV 源（iptv.m3u）
+        run: |
+          curl -L https://live.fanmingming.cn/tv/m3u/iptv.m3u -o output/input.m3u
+
+      - name: 过滤并输出新的 M3U 文件（保留 CCTV 和卫视）
+        run: |
+          echo '#EXTM3U x-tvg-url="https://live.fanmingming.cn/e.xml"' > output/output.m3u
+          grep -E 'CCTV|卫视' -A1 output/input.m3u >> output/output.m3u
+
+      - name: 发布到 gh-pages 分支
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin
+          git checkout --orphan gh-pages
+          mv output/output.m3u ./output.m3u
+          git add output.m3u
+          git commit -m "📺 自动更新 output.m3u"
+          git push -f origin gh-pages
