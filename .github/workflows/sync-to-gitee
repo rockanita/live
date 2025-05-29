@@ -1,0 +1,25 @@
+name: Sync to Gitee
+
+on:
+  workflow_run:
+    workflows: ["自动更新M3U"]
+    types:
+      - completed
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v3
+
+      - name: Push to Gitee
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git clone https://oauth2:${{ secrets.GITEE_TOKEN }}@gitee.com/${{ secrets.GITEE_USER }}/live.git gitee-repo
+          cp output.m3u gitee-repo/output.m3u
+          cd gitee-repo
+          git add .
+          git commit -m "Sync from GitHub at $(date +'%Y-%m-%d %H:%M:%S')" || echo "No changes"
+          git push origin master
