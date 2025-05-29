@@ -1,0 +1,25 @@
+name: 自动更新M3U
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 4 * * *'  # 每天早上 4 点 UTC 自动运行
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 拉取仓库代码
+        uses: actions/checkout@v3
+
+      - name: 下载 M3U 文件
+        run: |
+          mkdir output
+          curl -L https://live.fanmingming.cn/tv/m3u/ipv6.m3u -o output/output.m3u
+
+      - name: 部署到 gh-pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./output
